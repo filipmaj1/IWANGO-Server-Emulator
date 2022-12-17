@@ -84,7 +84,7 @@ namespace IWANGOEmulator.LobbyServer
                 DataString = Encoding.ASCII.GetString(data);
             }
 
-            public static Outgoing CreatePlayerPacket(ushort opcode, byte[] sharedMemBytes, uint otherBytes,  string stringData)
+            public static Outgoing CreatePlayerPacket(ushort opcode, byte[] sharedMemBytes, byte[] ipBytes,  string stringData)
             {
                 byte[] stringBytes = Encoding.ASCII.GetBytes(stringData);
                 byte[] data = new byte[1 + stringBytes.Length + 1 + sharedMemBytes.Length + 4];
@@ -94,7 +94,7 @@ namespace IWANGOEmulator.LobbyServer
                 Array.Copy(stringBytes, 0, data, 1, strLen);
                 data[1 + strLen] = 1;
                 Array.Copy(sharedMemBytes, 0, data, 1 + strLen + 1, sharedMemBytes.Length);
-                Array.Copy(BitConverter.GetBytes(otherBytes), 0, data, 1 + strLen + 1 + sharedMemBytes.Length, 4);
+                Array.Copy(ipBytes, 0, data, 1 + strLen + 1 + sharedMemBytes.Length, 4);
 
                 return new Outgoing(opcode, data);
             }

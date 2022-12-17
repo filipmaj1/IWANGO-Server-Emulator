@@ -23,8 +23,6 @@ namespace IWANGOEmulator.LobbyServer.Models
         public Team CurrentTeam = null;
         public Game CurrentGame = null;
 
-        public uint PlayerKey = 1;
-
         public void Send(Packet.Outgoing packet)
         {
             Send(packet.GetBytes());
@@ -69,6 +67,11 @@ namespace IWANGOEmulator.LobbyServer.Models
             return String.Format("{0}:{1}", (socket.RemoteEndPoint as IPEndPoint).Address, (socket.RemoteEndPoint as IPEndPoint).Port);
         }
 
+        public byte[] GetIpBytes()
+        {
+            return (socket.RemoteEndPoint as IPEndPoint).Address.GetAddressBytes();
+        }
+
         public void Disconnect()
         {
             socket.Shutdown(SocketShutdown.Both);
@@ -106,7 +109,7 @@ namespace IWANGOEmulator.LobbyServer.Models
             if (CurrentTeam != null)
                 teamPos = (uint)CurrentTeam.NumPlayers;
             string strData = $"{(CurrentLobby != null ? CurrentLobby.Name : "#")} {(CurrentTeam != null && CurrentTeam.Host.Equals(this) ? "*" : "")}{Name} {Flags} {(CurrentTeam != null ? "*" + CurrentTeam.Name : "#")} {(CurrentGame != null ? "*" + CurrentGame.Name : "#")}";
-            return Packet.Outgoing.CreatePlayerPacket(0x30, SharedMem, PlayerKey, strData);
+            return Packet.Outgoing.CreatePlayerPacket(0x30, SharedMem, GetIpBytes(), strData);
         }
 
         public void JoinLobby(Lobby lobby)

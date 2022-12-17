@@ -133,7 +133,6 @@ namespace IWANGOEmulator.LobbyServer
                 {
                     socket = s.EndAccept(result),
                     buffer = new byte[BUFFER_SIZE],
-                    PlayerKey = Keys++
                 };
                 lock (PlayerList)
                 {

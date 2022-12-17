@@ -174,7 +174,7 @@ namespace IWANGOEmulator.GateServer
                         conn.Send(Packet.Create(0x3E8));
                         //foreach (string serverString in lobbyServers)
                         //    conn.Send(Packet.Create(0x3E9, serverString));
-                        conn.Send(Packet.Create(0x3E9, "LobbyServer1 10.0.0.249 9501 1"));
+                        conn.Send(Packet.Create(0x3E9, "LobbyServer1 192.168.0.249 9501 1"));
                         conn.Send(Packet.Create(0x3EA));
                         break;
                     }

@@ -1,5 +1,6 @@
 ﻿using NLog;
 using System;
+using System.IO;
 
 namespace IWANGOEmulator.GameServer
 {
@@ -9,7 +10,24 @@ namespace IWANGOEmulator.GameServer
 
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            Log.Info("IWANGO Game Server");
+            Server server = new Server();
+            server.StartServer();
+
+            while (true)
+            {
+                string input = Console.ReadLine();
+                if (input.StartsWith('@'))
+                {
+                    try
+                    {
+                        byte[] data = File.ReadAllBytes(".\\" + input.Substring(1));
+                        server.SendAll(data);
+                    }
+                    catch (IOException) { Console.WriteLine("> File not found"); }
+                }
+            }
         }
     }
 }
+
