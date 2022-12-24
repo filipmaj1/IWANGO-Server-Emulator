@@ -13,7 +13,10 @@ namespace IWANGOEmulator.LobbyServer
         public const int PORT = 9501;
         public const int PINGPORT = 142;
         public const int BUFFER_SIZE = 0x200;
-        public const int BACKLOG = 100;       
+        public const int BACKLOG = 100;
+
+        public const string GAMESERVER_IP = "73.23.3.194";
+        public const ushort GAMESERVER_PORT = 9502;
 
         private Socket ServerSocket;
         private readonly PacketProcessor PacketProcessor;
@@ -120,8 +123,6 @@ namespace IWANGOEmulator.LobbyServer
                 conn.Send(new Packet.Outgoing(opcode, data));
             }
         }
-
-        uint Keys = 1;
 
         private void AcceptCallback(IAsyncResult result)
         {

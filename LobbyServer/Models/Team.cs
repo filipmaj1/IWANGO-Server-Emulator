@@ -17,8 +17,6 @@ namespace IWANGOEmulator.LobbyServer.Models
         public readonly List<Player> Members = new List<Player>();
         public readonly Player Host;
 
-        private int TeamPosCounter = 0;
-
         public Team(Lobby parentLobby, string name, ushort capacity, Player host)
         {
             Parent = parentLobby;
@@ -82,6 +80,22 @@ namespace IWANGOEmulator.LobbyServer.Models
         {
             foreach (Player player in Members)
                 player.Send(Packet.Outgoing.CreateSharedMemPacket(0x42, data, $"{owner.Name}"));
+        }
+
+        public void SendGameServer()
+        {
+            foreach (Player player in Members)
+                player.Send(new Packet.Outgoing(0x3d, $"{Server.GAMESERVER_IP} {Server.GAMESERVER_PORT}"));
+        }
+
+        public void LaunchGame()
+        {
+            string data = $"{NumPlayers}";
+            foreach (Player player in Members)
+                data += $" {(Host.Equals(player) ? "*" : "")}{player.Name} {player.GetIpString()}";
+
+            foreach (Player player in Members)
+                player.Send(new Packet.Outgoing(0x3e, data));
         }
     }
 }

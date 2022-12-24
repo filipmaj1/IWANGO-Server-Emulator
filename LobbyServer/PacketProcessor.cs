@@ -145,6 +145,15 @@ namespace IWANGOEmulator.LobbyServer
                 case 0x21: // Leave Team
                     player.LeaveTeam();
                     break;
+                case 0x0D: // Reconnect Request
+                    player.Send(new Packet.Outgoing(0x1f));
+                    break;
+                case 0x22: // Launch Request (Send Gameserver IP)
+                    player.CurrentTeam.SendGameServer();
+                    break;
+                case 0x65: // Launch Request (Send Team IPs)
+                    player.CurrentTeam.LaunchGame();
+                    break;
                 case 0x23: // Team Chat
                     if (player.CurrentTeam != null)
                         player.CurrentTeam.SendChat(player.Name, packet.DataString);

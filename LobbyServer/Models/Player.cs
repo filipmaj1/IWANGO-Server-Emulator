@@ -67,6 +67,11 @@ namespace IWANGOEmulator.LobbyServer.Models
             return String.Format("{0}:{1}", (socket.RemoteEndPoint as IPEndPoint).Address, (socket.RemoteEndPoint as IPEndPoint).Port);
         }
 
+        public String GetIpString()
+        {
+            return (socket.RemoteEndPoint as IPEndPoint).Address.ToString();
+        }
+
         public byte[] GetIpBytes()
         {
             return (socket.RemoteEndPoint as IPEndPoint).Address.GetAddressBytes();
@@ -105,9 +110,6 @@ namespace IWANGOEmulator.LobbyServer.Models
 
         public Packet.Outgoing GetSendDataPacket()
         {
-            uint teamPos = 0;
-            if (CurrentTeam != null)
-                teamPos = (uint)CurrentTeam.NumPlayers;
             string strData = $"{(CurrentLobby != null ? CurrentLobby.Name : "#")} {(CurrentTeam != null && CurrentTeam.Host.Equals(this) ? "*" : "")}{Name} {Flags} {(CurrentTeam != null ? "*" + CurrentTeam.Name : "#")} {(CurrentGame != null ? "*" + CurrentGame.Name : "#")}";
             return Packet.Outgoing.CreatePlayerPacket(0x30, SharedMem, GetIpBytes(), strData);
         }
