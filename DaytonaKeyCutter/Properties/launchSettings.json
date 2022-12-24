@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "DaytonaKeyCutter": {
+      "commandName": "Project",
+      "commandLineArgs": "-u goodcow@daytonakey -ip 208.213.61.207"
+    }
+  }
+}
