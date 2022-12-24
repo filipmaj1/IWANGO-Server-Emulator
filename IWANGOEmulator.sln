@@ -7,7 +7,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GateServer", "GateServer\Ga
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LobbyServer", "LobbyServer\LobbyServer.csproj", "{A64885CE-3CC1-4A1D-962A-C8C53E9FEACD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameServer", "GameServer\GameServer.csproj", "{ABCF1612-B97C-47AB-9B6F-E2861C1B92D1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GameServer", "GameServer\GameServer.csproj", "{ABCF1612-B97C-47AB-9B6F-E2861C1B92D1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DaytonaKeyCutter", "DaytonaKeyCutter\DaytonaKeyCutter.csproj", "{A7B13BB1-5B5B-452D-93E1-148C14C5BD07}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{ABCF1612-B97C-47AB-9B6F-E2861C1B92D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ABCF1612-B97C-47AB-9B6F-E2861C1B92D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ABCF1612-B97C-47AB-9B6F-E2861C1B92D1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7B13BB1-5B5B-452D-93E1-148C14C5BD07}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7B13BB1-5B5B-452D-93E1-148C14C5BD07}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7B13BB1-5B5B-452D-93E1-148C14C5BD07}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7B13BB1-5B5B-452D-93E1-148C14C5BD07}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
