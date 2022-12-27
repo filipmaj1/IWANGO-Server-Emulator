@@ -7,7 +7,7 @@ namespace IWANGOEmulator.GateServer
     {
         const string HOST = "127.0.0.1";
         const string PORT = "3306";
-        const string DB_NAME = "playonline";
+        const string DB_NAME = "iwango";
         const string USERNAME = "root";
         const string PASSWORD = "";
 
@@ -55,7 +55,11 @@ namespace IWANGOEmulator.GateServer
             try
             {
                 conn.Open();
-                string query = "SELECT name FROM handles WHERE username = @username";
+                string query = @"
+                    SELECT handles.name FROM handles
+                    INNER JOIN accounts ON accounts.id = handles.accountId
+                    WHERE username = @username
+                    ORDER BY handles.creationDate ASC";
                 cmd = new MySqlCommand(query, conn);
                 cmd.Parameters.AddWithValue("@username", username);
                 using (MySqlDataReader Reader = cmd.ExecuteReader())
@@ -78,9 +82,8 @@ namespace IWANGOEmulator.GateServer
             return handleList;
         }
 
-        public static void CreateHandle(string username, string handleName)
+        public static int CreateHandle(string username, string handleName)
         {
-            string query;
             MySqlCommand cmd;
 
             using MySqlConnection conn = new MySqlConnection($"Server={HOST}; Port={PORT}; Database={DB_NAME}; UID={USERNAME}; Password={PASSWORD}");
@@ -88,12 +91,12 @@ namespace IWANGOEmulator.GateServer
             {
                 conn.Open();
 
-                query = @"
-                    INSERT INTO handles (name, username) 
-                    VALUES (@name, @username)
+                string queryInsert = @"
+                    INSERT INTO handles (accountId, name)
+                    VALUES ((SELECT id FROM accounts WHERE username=@username), @name);
                     ";
 
-                cmd = new MySqlCommand(query, conn);
+                cmd = new MySqlCommand(queryInsert, conn);
                 cmd.Parameters.AddWithValue("@name", handleName);
                 cmd.Parameters.AddWithValue("@username", username);
 
@@ -101,15 +104,20 @@ namespace IWANGOEmulator.GateServer
             }
             catch (MySqlException e)
             {
-                Program.Log.Error(e.ToString());
+                if (e.Number == 1062)
+                    return -1;
+                else
+                    return 0;
             }
             finally
             {
                 conn.Dispose();
             }
+
+            return 1;
         }
 
-        public static void ReplaceHandle(string username, int handleIndex, string newHandleName)
+        public static int ReplaceHandle(string username, int handleIndex, string newHandleName)
         {
             string query;
             MySqlCommand cmd;
@@ -119,31 +127,51 @@ namespace IWANGOEmulator.GateServer
             {
                 conn.Open();
 
+                string getNameQuery = @"
+                    SELECT name FROM handles 
+                    INNER JOIN accounts on accounts.id = handles.accountId 
+                    WHERE username = @username 
+                    ORDER BY creationDate DESC LIMIT @handleIndex, 1";
+
+                string oldHandleName;
+                cmd = new MySqlCommand(getNameQuery, conn);
+                cmd.Parameters.AddWithValue("@username", username);
+                cmd.Parameters.AddWithValue("@handleIndex", handleIndex);
+                var hasEntry = cmd.ExecuteScalar();
+                if (hasEntry != null)
+                    oldHandleName = hasEntry.ToString();
+                else
+                    return 0;
+
                 query = @"
                     UPDATE handles 
                     SET name = @newHandleName
-                    WHERE name IN (SELECT name FROM handles WHERE username = @username ORDER BY creationDate DESC LIMIT @handleIndex, 1)
+                    WHERE name = @oldHandleName
                     ";
 
                 cmd = new MySqlCommand(query, conn);
                 cmd.Parameters.AddWithValue("@username", username);
-                cmd.Parameters.AddWithValue("@handleIndex", handleIndex);
+                cmd.Parameters.AddWithValue("@oldHandleName", oldHandleName);
                 cmd.Parameters.AddWithValue("@newHandleName", newHandleName);
                 cmd.ExecuteNonQuery();
             }
             catch (MySqlException e)
             {
-                Program.Log.Error(e.ToString());
+                if (e.Number == 1062)
+                    return -1;
+                else
+                    return 0;
             }
             finally
             {
                 conn.Dispose();
             }
+
+            return 1;
         }
 
-        public static void DeleteHandle(string username, int handleIndex)
+        public static bool DeleteHandle(string username, int handleIndex)
         {
-            string query;
             MySqlCommand cmd;
 
             using MySqlConnection conn = new MySqlConnection($"Server={HOST}; Port={PORT}; Database={DB_NAME}; UID={USERNAME}; Password={PASSWORD}");
@@ -151,24 +179,44 @@ namespace IWANGOEmulator.GateServer
             {
                 conn.Open();
 
-                query = @"
-                    DELETE FROM handles 
-                    WHERE name IN (SELECT name FROM handles WHERE username = @username ORDER BY creationDate DESC LIMIT @handleIndex, 1)
-                    ";
+                string handleName;
 
-                cmd = new MySqlCommand(query, conn);
+                string getNameQuery = @"
+                    SELECT name FROM handles 
+                    INNER JOIN accounts on accounts.id = handles.accountId 
+                    WHERE username = @username 
+                    ORDER BY creationDate DESC LIMIT @handleIndex, 1";
+
+
+                cmd = new MySqlCommand(getNameQuery, conn);
                 cmd.Parameters.AddWithValue("@username", username);
                 cmd.Parameters.AddWithValue("@handleIndex", handleIndex);
+                var hasEntry = cmd.ExecuteScalar();
+                if (hasEntry != null)
+                    handleName = hasEntry.ToString();
+                else
+                    return false;
+
+                string deleteQuery = @"
+                    DELETE FROM handles 
+                    WHERE name = @handleName
+                    ";
+
+                cmd = new MySqlCommand(deleteQuery, conn);
+                cmd.Parameters.AddWithValue("@handleName", handleName);
                 cmd.ExecuteNonQuery();
             }
             catch (MySqlException e)
             {
                 Program.Log.Error(e.ToString());
+                return false;
             }
             finally
             {
                 conn.Dispose();
             }
+
+            return true;
         }
 
     }

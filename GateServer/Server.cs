@@ -152,7 +152,6 @@ namespace IWANGOEmulator.GateServer
         #endregion
 
         //What is 0x3F6 and 0x3FF for?
-
         private void ProcessRequest(ClientConnection conn, string request)
         {
             string[] split = request.Split(' ');
@@ -186,15 +185,13 @@ namespace IWANGOEmulator.GateServer
                             return;
                         }
 
-                        /*
-                        List<string> handles = Database.GetHandles(split[1]);
+                        string username = split[1];
+
+                        List<string> handles = Database.GetHandles(username);
                         StringBuilder builder = new StringBuilder();
                         for (int i = 0; i < handles.Count; i++)
                             builder.Append($"{i+1}{handles[i]} ");
                         conn.Send(Packet.Create(0x3F2, builder.ToString()));
-                        */
-
-                        conn.Send(Packet.Create(0x3F2, "1Ioncannon 2Someguy"));
                         break;
                     }
                 case "HANDLE_ADD":
@@ -205,16 +202,22 @@ namespace IWANGOEmulator.GateServer
                             return;
                         }
 
-                        /*
-                        int result = Database.CreateHandle(split[1], split[4]);
-                        if (result == 0)
-                            conn.Send(Packet.Create(0x3F3, $"1 {split[4]}"));
-                        else if (result == -1)
-                            SendError(conn, HandleError.NAME_IN_USE1);
-                        else if (result == -2)
+                        string username = split[1];
+                        if (!int.TryParse(split[3], out int handleIndx))
+                        {
                             SendError(conn, HandleError.ERROR1);
-                        */
-                        conn.Send(Packet.Create(0x3F3, "0 TEST"));
+                            return;
+                        }
+                        string handlename = split[4];
+
+                        int result = Database.CreateHandle(username, handlename);
+                        if (result == 1)
+                            conn.Send(Packet.Create(0x3F3, $"1 {handlename}"));
+                        else if (result == 0)
+                            SendError(conn, HandleError.ERROR1);
+                        else if (result == -1)
+                            SendError(conn, HandleError.NAME_IN_USE1);                        
+                        
                         break;
                     }
                 case "HANDLE_REPLACE":
@@ -225,17 +228,22 @@ namespace IWANGOEmulator.GateServer
                             return;
                         }
 
-                        /*
-                        int result = Database.ReplaceHandle(split[1], split[3], split[4]);
+                        string username = split[1];
+                        if (!int.TryParse(split[3], out int handleIndx))
+                        {
+                            SendError(conn, HandleError.ERROR1);
+                            return;
+                        }
+                        string newHandleName = split[4];
+
+                        int result = Database.ReplaceHandle(username, handleIndx, newHandleName);
                         if (result == 0)
                             conn.Send(Packet.Create(0x3F4, $"1 {split[4]}"));
+                        else if (result == 0)
+                            SendError(conn, HandleError.ERROR1);
                         else if (result == -1)
                             SendError(conn, HandleError.NAME_IN_USE1);
-                        else if (result == -2)
-                            SendError(conn, HandleError.ERROR1);
-                        */
 
-                        conn.Send(Packet.Create(0x3F4));
                         break;
                     }
                 case "HANDLE_DELETE":
@@ -245,15 +253,20 @@ namespace IWANGOEmulator.GateServer
                             SendError(conn, HandleError.ERROR1);
                             return;
                         }
-                        
-                        /*                    
-                        if (Database.DeleteHandle(split[1], split[3]))
+
+                        string username = split[1];
+                        if (!int.TryParse(split[3], out int handleIndx))
+                        {
+                            SendError(conn, HandleError.ERROR1);
+                            return;
+                        }
+
+
+                        if (Database.DeleteHandle(username, handleIndx))
                             conn.Send(Packet.Create(0x3F5));
                         else
-                            SendError(conn, HandleError.ERROR1);
-                        */
+                            SendError(conn, HandleError.ERROR1);                        
 
-                        conn.Send(Packet.Create(0x3F5, "1 TEST"));
                         break;
                     }
             }
