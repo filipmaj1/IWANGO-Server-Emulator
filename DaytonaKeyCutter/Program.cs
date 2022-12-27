@@ -6,7 +6,9 @@ namespace IWANGOEmulator.DaytonaKeyCutter
 {
     class Program
     {
-        static SegaCrypto Crypto = new SegaCrypto(Encoding.ASCII.GetBytes("iloveosamu27"));
+        private const string KEY_FILENAME = "DAYTKEY_";
+
+        private static SegaCrypto Crypto = new SegaCrypto(Encoding.ASCII.GetBytes("iloveosamu27"));
 
         // Generates Daytona US key files to allow users to login to the game.
         // Encrypt Mode: keycutter <username> [-p password] [-ip password] [-out filename]
@@ -49,12 +51,12 @@ namespace IWANGOEmulator.DaytonaKeyCutter
                 Console.WriteLine("Cutting you a new key...");
                 byte[] encryptedKey = CutKey(username, ip);
                 byte[] vmsFile = GenerateVMS(encryptedKey);
-                //byte[] vmiFile = GenerateVMI();
+                byte[] vmiFile = GenerateVMI(vmsFile.Length);
 
-                File.WriteAllBytes($"{filepath}/DAYTONAKEY_.VMS", vmsFile);
-                //File.WriteAllBytes($"{filepath}/DAYTONAKEY_.VMI", vmiFile);
+                File.WriteAllBytes($"{filepath}/{KEY_FILENAME}.VMS", vmsFile);
+                File.WriteAllBytes($"{filepath}/{KEY_FILENAME}.VMI", vmiFile);
 
-                Console.WriteLine("DAYTONAKEY_.VMS and DAYTONAKEY_.VMI generated.");
+                Console.WriteLine($"{KEY_FILENAME}.VMS and {KEY_FILENAME}.VMI generated.");
             }
             else
             {
@@ -100,9 +102,42 @@ namespace IWANGOEmulator.DaytonaKeyCutter
             return data;
         }
 
-        public static byte[] GenerateVMI()
+        public static byte[] GenerateVMI(int fileSize)
         {
-            return null;
+            byte[] vmiFile = new byte[0x6C];
+
+            uint checksum = BitConverter.ToUInt32(Encoding.ASCII.GetBytes(KEY_FILENAME.Substring(0,4))) & 0x41474553; // AND first 4 filename bytes with SEGA
+            DateTime currentDate = DateTime.Now;
+
+            using (MemoryStream stream = new MemoryStream(vmiFile))
+            using (BinaryWriter writer = new BinaryWriter(stream))
+            {
+                writer.Write(checksum);
+                writer.BaseStream.Seek(0x04, SeekOrigin.Begin);
+                writer.Write(Encoding.ASCII.GetBytes("Daytona Key File"));
+                writer.BaseStream.Seek(0x24, SeekOrigin.Begin);
+                writer.Write(Encoding.ASCII.GetBytes("IONCANNON IONCANNON IONCANNON"));
+                writer.BaseStream.Seek(0x44, SeekOrigin.Begin);
+                writer.Write((UInt16)currentDate.Year);
+                writer.Write((Byte)currentDate.Month);
+                writer.Write((Byte)currentDate.Day);
+                writer.Write((Byte)currentDate.Hour);
+                writer.Write((Byte)currentDate.Minute);
+                writer.Write((Byte)currentDate.Second);
+                writer.Write((Byte)currentDate.DayOfWeek);
+                writer.Write((UInt16)0);
+                writer.Write((UInt16)1);
+                writer.BaseStream.Seek(0x50, SeekOrigin.Begin);
+                writer.Write(Encoding.ASCII.GetBytes($"{KEY_FILENAME}"));
+                writer.BaseStream.Seek(0x58, SeekOrigin.Begin);
+                writer.Write(Encoding.ASCII.GetBytes($"DAYTONA_KEY"));
+                writer.BaseStream.Seek(0x64, SeekOrigin.Begin);
+                writer.Write((UInt16)0);
+                writer.Write((UInt16)0);
+                writer.Write((UInt32)fileSize);
+            }
+
+            return vmiFile;
         }
 
         public static byte[] GenerateVMS(byte[] keyData)
