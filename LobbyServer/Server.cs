@@ -11,11 +11,10 @@ namespace IWANGOEmulator.LobbyServer
     class Server
     {
         public const int PORT = 9501;
-        public const int PINGPORT = 142;
         public const int BUFFER_SIZE = 0x200;
         public const int BACKLOG = 100;
 
-        public const string GAMESERVER_IP = "73.23.3.194";
+        public const string GAMESERVER_IP = "192.168.0.249";
         public const ushort GAMESERVER_PORT = 9502;
 
         private Socket ServerSocket;
@@ -24,8 +23,6 @@ namespace IWANGOEmulator.LobbyServer
         private readonly List<Game> GameList = new List<Game>();
         private readonly List<Player> PlayerList = new List<Player>();
         private readonly List<Lobby> LobbyList = new List<Lobby>();
-
-        private byte[] PingBuffer = new byte[0xFFF];
 
         public Server()
         {
@@ -140,17 +137,6 @@ namespace IWANGOEmulator.LobbyServer
                     PlayerList.Add(conn);
                 }
 
-                IPEndPoint pingEndpoint = new IPEndPoint((conn.socket.RemoteEndPoint as IPEndPoint).Address, PINGPORT);
-                try
-                {
-                    conn.pingSocket = new Socket(pingEndpoint.Address.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-                    conn.pingSocket.Bind(pingEndpoint);
-                }
-                catch (Exception e)
-                {
-                    Program.Log.Error("Could not create server socket: " + e.Message);
-                }
-
                 conn.socket.BeginReceive(conn.buffer, 0, conn.buffer.Length, SocketFlags.None, new AsyncCallback(ReceiveCallback), conn);
             }
             catch (SocketException)
@@ -244,13 +230,6 @@ namespace IWANGOEmulator.LobbyServer
             }
         }
 
-        public void SendPing(int val1, int val2)
-        {
-            foreach (Player p in PlayerList)
-                p.SendPing();
-        }
-
         #endregion
-
     }
 }

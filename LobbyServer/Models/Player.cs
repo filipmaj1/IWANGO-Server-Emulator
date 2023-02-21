@@ -9,9 +9,7 @@ namespace IWANGOEmulator.LobbyServer.Models
     {
         // Connection stuff
         public Socket socket;
-        public Socket pingSocket;
         public byte[] buffer = new byte[0xffff];
-        public byte[] pingBuffer = new byte[0x100];
         public int lastPartialSize = 0;
 
         // Player Info
@@ -40,25 +38,6 @@ namespace IWANGOEmulator.LobbyServer.Models
             } catch (Exception _)
             {
                 Disconnect();
-            }
-        }
-
-        public void SendPing(bool withData = false, int playerKey = 0, int time = 0)
-        {
-            IPEndPoint endPoint = new IPEndPoint((socket.RemoteEndPoint as IPEndPoint).Address, 50000);
-
-            if (withData)
-            {
-                pingSocket.SendTo(BitConverter.GetBytes((int)1), endPoint);
-                pingSocket.SendTo(BitConverter.GetBytes((int)playerKey), endPoint);
-                pingSocket.SendTo(BitConverter.GetBytes((int)time), endPoint);
-            }
-            else
-            {
-                EndPoint receiveEP = (EndPoint)endPoint;
-                byte[] received = new byte[0xC];
-                pingSocket.SendTo(received, endPoint);
-                pingSocket.ReceiveFrom(received, ref receiveEP);
             }
         }
 

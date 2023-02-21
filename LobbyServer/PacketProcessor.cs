@@ -37,7 +37,9 @@ namespace IWANGOEmulator.LobbyServer
                     }
 
                     player.SetName(split[0]);
-                    player.Send(new Packet.Outgoing(0x11, "0100 0102 Code5"));
+
+                    DateTime currentTime = DateTime.Now;
+                    player.Send(new Packet.Outgoing(0x11, $"0100 0102 {currentTime.Year}:{currentTime.Month}:{currentTime.Day}:{currentTime.Hour}:{currentTime.Minute}:{currentTime.Second}"));
                     break;
                 case 0x02: // Login 2
                     player.Send(new Packet.Outgoing(0x0C, "LOB 999 999 AAA AAA"));
@@ -148,11 +150,12 @@ namespace IWANGOEmulator.LobbyServer
                 case 0x0D: // Reconnect Request
                     player.Send(new Packet.Outgoing(0x1f));
                     break;
-                case 0x22: // Launch Request (Send Gameserver IP)
-                    player.CurrentTeam.SendGameServer();
+                case 0x22: // Launch Request (Send Team IPs)
+                case 0x6A: // Launch Request Single
+                    player.CurrentTeam.SendGameServer(player);
                     break;
-                case 0x65: // Launch Request (Send Team IPs)
-                    player.CurrentTeam.LaunchGame();
+                case 0x65: // Finish Launch Request
+                    player.CurrentTeam.LaunchGame(player);
                     break;
                 case 0x23: // Team Chat
                     if (player.CurrentTeam != null)

@@ -82,20 +82,19 @@ namespace IWANGOEmulator.LobbyServer.Models
                 player.Send(Packet.Outgoing.CreateSharedMemPacket(0x42, data, $"{owner.Name}"));
         }
 
-        public void SendGameServer()
+        public void SendGameServer(Player p)
         {
             foreach (Player player in Members)
                 player.Send(new Packet.Outgoing(0x3d, $"{Server.GAMESERVER_IP} {Server.GAMESERVER_PORT}"));
         }
 
-        public void LaunchGame()
+        public void LaunchGame(Player p)
         {
             string data = $"{NumPlayers}";
             foreach (Player player in Members)
                 data += $" {(Host.Equals(player) ? "*" : "")}{player.Name} {player.GetIpString()}";
 
-            foreach (Player player in Members)
-                player.Send(new Packet.Outgoing(0x3e, data));
+            p.Send(new Packet.Outgoing(0x3e, data));
         }
     }
 }

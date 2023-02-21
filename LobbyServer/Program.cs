@@ -48,20 +48,6 @@ namespace IWANGOEmulator.LobbyServer
                         server.SendAll(opcode, split.Length == 2 ? split[1] : "");
                     }
                 }
-                else if (input.StartsWith('p'))
-                {
-                    string[] split = input.Split(' ');
-                    if (split.Length == 2)
-                    {
-                        if (!int.TryParse(split[0].Substring(1), System.Globalization.NumberStyles.HexNumber, null, out int val1))
-                            continue;
-
-                        if (!int.TryParse(split[1], System.Globalization.NumberStyles.HexNumber, null, out int val2))
-                            continue;
-
-                        server.SendPing(val1, val2);
-                    }
-                }
                 else if (input.Equals("clear"))
                     Console.Clear();
                 Thread.Sleep(200);
