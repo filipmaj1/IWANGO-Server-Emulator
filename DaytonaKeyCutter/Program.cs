@@ -7,8 +7,7 @@ namespace IWANGOEmulator.DaytonaKeyCutter
     class Program
     {
         private const string KEY_FILENAME = "DAYTKEY_";
-
-        private static SegaCrypto Crypto = new SegaCrypto(Encoding.ASCII.GetBytes("iloveosamu27"));
+        private static readonly SegaCrypto Crypto = new SegaCrypto(Encoding.ASCII.GetBytes("iloveosamu27"));
 
         // Generates Daytona US key files to allow users to login to the game.
         // Encrypt Mode: keycutter <username> [-p password] [-ip password] [-out filename]
@@ -130,7 +129,7 @@ namespace IWANGOEmulator.DaytonaKeyCutter
                 writer.BaseStream.Seek(0x50, SeekOrigin.Begin);
                 writer.Write(Encoding.ASCII.GetBytes($"{KEY_FILENAME}"));
                 writer.BaseStream.Seek(0x58, SeekOrigin.Begin);
-                writer.Write(Encoding.ASCII.GetBytes($"DAYTONA_KEY"));
+                writer.Write(Encoding.ASCII.GetBytes($"DAYTONA__KEY"));
                 writer.BaseStream.Seek(0x64, SeekOrigin.Begin);
                 writer.Write((UInt16)0);
                 writer.Write((UInt16)0);
