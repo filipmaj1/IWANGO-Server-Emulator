@@ -11,10 +11,10 @@ namespace IWANGOEmulator.GateServer
         const string USERNAME = "root";
         const string PASSWORD = "";
 
-        public static List<string> GetLobbyServers(string commodityId)
+        public static List<LobbyServer> GetLobbyServers(string commodityId)
         {
             MySqlCommand cmd;
-            List<string> serverString = new List<string>();
+            List<LobbyServer> lobbyList = new List<LobbyServer>();
 
             using MySqlConnection conn = new MySqlConnection($"Server={HOST}; Port={PORT}; Database={DB_NAME}; UID={USERNAME}; Password={PASSWORD}");
             try
@@ -29,8 +29,8 @@ namespace IWANGOEmulator.GateServer
                     {
                         string name = Reader.GetString("name");
                         string ip = Reader.GetString("ip");
-                        string port = Reader.GetUInt16("port").ToString();
-                        serverString.Add($"{name} {ip} {port}");
+                        ushort port = Reader.GetUInt16("port");
+                        lobbyList.Add(new LobbyServer(name, ip, port));
                     }
                 }
             }
@@ -43,7 +43,7 @@ namespace IWANGOEmulator.GateServer
                 conn.Dispose();
             }
 
-            return serverString;
+            return lobbyList;
         }
 
         public static List<string> GetHandles(string username)

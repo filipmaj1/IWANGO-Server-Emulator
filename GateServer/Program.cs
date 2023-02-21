@@ -1,5 +1,6 @@
 ﻿using NLog;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 
@@ -17,17 +18,7 @@ namespace IWANGOEmulator.GateServer
             server.StartServer();
 
             while (true)
-            {
-                string input = Console.ReadLine();
-                if (input.StartsWith('@'))
-                {
-                    try
-                    {
-                        byte[] data = File.ReadAllBytes(".\\" + input.Substring(1));
-                        server.SendAll(data);
-                    }
-                    catch (IOException) { Console.WriteLine("> File not found"); }
-                }
+            {             
                 Thread.Sleep(200);
             };
         }

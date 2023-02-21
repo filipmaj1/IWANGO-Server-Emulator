@@ -169,12 +169,14 @@ namespace IWANGOEmulator.GateServer
                             return;
                         }
 
-                        //List<string> lobbyServers = Database.GetLobbyServers(commodityId);
+                        List<LobbyServer> lobbyServerList = Database.GetLobbyServers("daytona");
+                        int counter = 1;
+
                         conn.Send(Packet.Create(0x3E8));
-                        //foreach (string serverString in lobbyServers)
-                        //    conn.Send(Packet.Create(0x3E9, serverString));
-                        conn.Send(Packet.Create(0x3E9, "LobbyServer1 192.168.0.249 9501 1"));
+                        foreach (LobbyServer ls in lobbyServerList)
+                            conn.Send(Packet.Create(0x3E9, $"{ls.Name} {ls.Ip} {ls.Port} {counter++}"));
                         conn.Send(Packet.Create(0x3EA));
+
                         break;
                     }
                 case "HANDLE_LIST_GET":
