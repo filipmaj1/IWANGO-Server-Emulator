@@ -27,6 +27,7 @@ namespace IWANGOEmulator.LobbyServer
             switch (opcode)
             {
                 case 0x01: // Login 1
+                    // Is this handle already in the server? Handle is used as a key and HAS to be unique.
                     Player exists = Server.GetPlayer(split[0]);
                     if (exists != null)
                     {
@@ -34,8 +35,18 @@ namespace IWANGOEmulator.LobbyServer
                         exists.Disconnect();
                     }
 
-                    player.SetName(split[0]);
+                    // Is this IP already in the server? IP is assumed to be a WAN IP due to dial-up days. Disabled when debugging.
+#if !DEBUG
+                    exists = Server.IsIPUnique(player);
+                    if (exists != null)
+                    {
+                        exists.SetName("");
+                        exists.Disconnect();
+                    }
+#endif
 
+                    // We are good to continue
+                    player.SetName(split[0]);
                     DateTime currentTime = DateTime.Now;
                     player.Send(0x11, $"0100 0102 {currentTime.Year}:{currentTime.Month}:{currentTime.Day}:{currentTime.Hour}:{currentTime.Minute}:{currentTime.Second}");
                     break;

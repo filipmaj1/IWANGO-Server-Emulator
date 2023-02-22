@@ -47,7 +47,7 @@ namespace IWANGOEmulator.LobbyServer.Models
                         players += $" {p.Name}";
 
                     // Send packet to all members
-                    foreach (Player p in Members)
+                    foreach (Player p in player.CurrentLobby.Members)
                         p.Send(0x29, $"{Name} {players.Substring(1)}");
                 }                
             }
@@ -60,8 +60,7 @@ namespace IWANGOEmulator.LobbyServer.Models
                 Members.Remove(player);
 
                 // Send Packets
-                player.Send(0x3B, $"{Name} {player.Name}");
-                foreach (Player p in Members)
+                foreach (Player p in player.CurrentLobby.Members)
                     p.Send(0x3B, $"{Name} {player.Name}");
 
                 // Delete Team if 0 members

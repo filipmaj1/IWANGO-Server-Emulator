@@ -55,6 +55,9 @@ namespace IWANGOEmulator.LobbyServer.Models
 
             Disconnected = true;
 
+            // Tell client to d/c if actually still connected
+            Send(0x17);
+
             // Remove player from everything
             if (CurrentTeam != null)
                 CurrentTeam.RemovePlayer(this);
@@ -206,14 +209,21 @@ namespace IWANGOEmulator.LobbyServer.Models
         public int Send(ushort opcode, byte[] payload = null)
         {
             byte[] data = MakePacket(opcode, payload);
-            return Socket.Send(data);
+
+            try
+            {
+                return Socket.Send(data);
+            }
+            catch (SocketException)
+            {
+                return 0;
+            }
         }
 
         public int Send(ushort opcode, string payload)
         {
             byte[] payloadBytes = System.Text.Encoding.ASCII.GetBytes(payload);
-            byte[] data = MakePacket(opcode, payloadBytes);
-            return Socket.Send(data);
+            return Send(opcode, payloadBytes);
         }
 
         public int DebugSendPacket(byte[] data)

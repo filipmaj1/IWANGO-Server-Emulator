@@ -93,6 +93,11 @@ namespace IWANGOEmulator.LobbyServer
             return Clients.Values.SingleOrDefault(x => x.Name.Equals(playerName));
         }
 
+        public Player IsIPUnique(Player me)
+        {
+            return Clients.Values.SingleOrDefault(x => x.GetIp().Equals(me.GetIp()) && !x.Equals(me));
+        }
+
         #endregion
 
         #region Socket Handling
