@@ -32,14 +32,14 @@ namespace IWANGOEmulator.LobbyServer.Models
                 Members.Add(player);
 
                 // Confirm Join Lobby
-                player.Send(new Packet.Outgoing(0x13, $"{Name} {player.Name}"));
+                player.Send(0x13, $"{Name} {player.Name}");
 
                 // Send player info to all members
                 foreach (Player p in Members)
                 {
                     if (p.Equals(player))
                         continue;
-                    p.Send(player.GetSendDataPacket());
+                    p.Send(0x30, player.GetSendDataPacket());
                 }    
             }
         }
@@ -52,25 +52,25 @@ namespace IWANGOEmulator.LobbyServer.Models
                 Members.Remove(player);
 
                 // Confirm Leave Lobby
-                player.Send(new Packet.Outgoing(0xCB));
+                player.Send(0xCB);
 
                 // Tell all members to remove the player
                 foreach (Player p in Members)
-                    p.Send(new Packet.Outgoing(0x2C, $"{player.Name}"));
+                    p.Send(0x2C, $"{player.Name}");
             }
         }
 
         public void SendChat(string from, string message)
         {
             foreach (Player player in Members)
-                player.Send(new Packet.Outgoing(0x2D, $"{from} {message}"));
+                player.Send(0x2D, $"{from} {message}");
         }
 
         public Team CreateTeam(Player creator, string teamName, ushort capacity, string type)
         {
             Team team = new Team(this, teamName, capacity, creator);
             Teams.Add(team);
-            creator.Send(new Outgoing(0x28, $"{team.Name} {creator.Name} {capacity} 0 {Game.Name}"));
+            creator.Send(0x28, $"{team.Name} {creator.Name} {capacity} 0 {Game.Name}");
             return team;
         }
 
@@ -81,7 +81,7 @@ namespace IWANGOEmulator.LobbyServer.Models
 
             // Tell all members to remove team
             foreach (Player p in Members)
-                p.Send(new Packet.Outgoing(0x3A, $"{team.Name}"));
+                p.Send(0x3A, $"{team.Name}");
         }
 
         public Team GetTeam(string teamName)

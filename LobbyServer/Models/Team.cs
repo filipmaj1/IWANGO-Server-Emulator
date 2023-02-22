@@ -30,7 +30,7 @@ namespace IWANGOEmulator.LobbyServer.Models
         {
             SharedMem = memAsStr;
             foreach (Player player in Members)
-                player.Send(new Packet.Outgoing(0x34, $"{Name} {SharedMem}"));
+                player.Send(0x34, $"{Name} {SharedMem}");
         }
 
         public void AddPlayer(Player player)
@@ -48,7 +48,7 @@ namespace IWANGOEmulator.LobbyServer.Models
 
                     // Send packet to all members
                     foreach (Player p in Members)
-                        p.Send(new Packet.Outgoing(0x29, $"{Name} {players.Substring(1)}"));
+                        p.Send(0x29, $"{Name} {players.Substring(1)}");
                 }                
             }
         }
@@ -60,9 +60,9 @@ namespace IWANGOEmulator.LobbyServer.Models
                 Members.Remove(player);
 
                 // Send Packets
-                player.Send(new Packet.Outgoing(0x3B, $"{Name} {player.Name}"));
+                player.Send(0x3B, $"{Name} {player.Name}");
                 foreach (Player p in Members)
-                    p.Send(new Packet.Outgoing(0x3B, $"{Name} {player.Name}"));
+                    p.Send(0x3B, $"{Name} {player.Name}");
 
                 // Delete Team if 0 members
                 if (NumPlayers == 0)
@@ -73,28 +73,28 @@ namespace IWANGOEmulator.LobbyServer.Models
         public void SendChat(string from, string message)
         {
             foreach (Player player in Members)
-                player.Send(new Packet.Outgoing(0x43, $"{from} {message}"));
+                player.Send(0x43, $"{from} {message}");
         }
 
         public void SendSharedMemPlayer(Player owner, byte[] data)
         {
             foreach (Player player in Members)
-                player.Send(Packet.Outgoing.CreateSharedMemPacket(0x42, data, $"{owner.Name}"));
+                player.Send(0x42, Packet.CreateSharedMemPacket(data, $"{owner.Name}"));
         }
 
         public void SendGameServer(Player p)
         {
             foreach (Player player in Members)
-                player.Send(new Packet.Outgoing(0x3d, $"{Server.GAMESERVER_IP} {Server.GAMESERVER_PORT}"));
+                player.Send(0x3d, $"{Program.GetServer().GetIp()} {Program.GetServer().GetPort()}");
         }
 
         public void LaunchGame(Player p)
         {
             string data = $"{NumPlayers}";
             foreach (Player player in Members)
-                data += $" {(Host.Equals(player) ? "*" : "")}{player.Name} {player.GetIpString()}";
+                data += $" {(Host.Equals(player) ? "*" : "")}{player.Name} {player.GetIp()}";
 
-            p.Send(new Packet.Outgoing(0x3e, data));
+            p.Send(0x3e, data);
         }
     }
 }

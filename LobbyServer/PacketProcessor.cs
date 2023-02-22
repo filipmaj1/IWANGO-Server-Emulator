@@ -1,6 +1,7 @@
 ﻿using IWANGOEmulator.LobbyServer.Models;
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading;
 
 namespace IWANGOEmulator.LobbyServer
@@ -8,25 +9,22 @@ namespace IWANGOEmulator.LobbyServer
     class PacketProcessor
     {
         private Server Server;
-        private readonly Thread ProcessThread;
-        private Queue<Tuple<Player, Packet.Incoming>> ProcessQueue = new Queue<Tuple<Player, Packet.Incoming>>();
 
         public PacketProcessor(Server server)
         {
             Server = server;
-            ProcessThread = new Thread(new ThreadStart(ProcessLoop));
         }
 
-        private void HandlePacket(Player player, Packet.Incoming packet)
+        public void HandlePacket(Player player, ushort opcode, byte[] payload)
         {
-            string[] split = packet.DataString.Split(' ');
-
+            string payloadAsString = Encoding.ASCII.GetString(payload);
+            string[] split = payloadAsString.Split(' ');
 
 #if DEBUG
-            Program.Log.Debug($"{packet}");
+            Program.Log.Debug($"Received: 0x{opcode:X2} -> {payloadAsString}");
 #endif
 
-            switch (packet.Opcode)
+            switch (opcode)
             {
                 case 0x01: // Login 1
                     Player exists = Server.GetPlayer(split[0]);
@@ -39,12 +37,12 @@ namespace IWANGOEmulator.LobbyServer
                     player.SetName(split[0]);
 
                     DateTime currentTime = DateTime.Now;
-                    player.Send(new Packet.Outgoing(0x11, $"0100 0102 {currentTime.Year}:{currentTime.Month}:{currentTime.Day}:{currentTime.Hour}:{currentTime.Minute}:{currentTime.Second}"));
+                    player.Send(0x11, $"0100 0102 {currentTime.Year}:{currentTime.Month}:{currentTime.Day}:{currentTime.Hour}:{currentTime.Minute}:{currentTime.Second}");
                     break;
                 case 0x02: // Login 2
-                    player.Send(new Packet.Outgoing(0x0C, "LOB 999 999 AAA AAA"));
-                    player.Send(new Packet.Outgoing(0x0A, "Welcome to IWANGO Emulator by Ioncannon"));
-                    player.Send(new Packet.Outgoing(0xE1));
+                    player.Send(0x0C, "LOB 999 999 AAA AAA");
+                    player.Send(0x0A, "Welcome to IWANGO Emulator by Ioncannon");
+                    player.Send(0xE1);
                     break;
                 case 0x03: // SendLogData
                     break;                
@@ -65,45 +63,45 @@ namespace IWANGOEmulator.LobbyServer
                     }
                     break;
                 case 0x05: // Disconnect
-                    player.Send(new Packet.Outgoing(0xE3));
-                    player.Send(new Packet.Outgoing(0x16));
+                    player.Send(0xE3);
+                    player.Send(0x16);
                     player.Disconnect();
                     break;
                 case 0x07: // Get Lobbies
                     Lobby[] lobbies = Server.GetLobbyList();
                     foreach (Lobby lobby in lobbies)
-                        player.Send(new Packet.Outgoing(0x18, $"{lobby.Name} {lobby.NumPlayers} {lobby.MaxCapacity} {lobby.Flags} {(lobby.HasSharedMem ? lobby.SharedMem : "#")} #{lobby.Game.Name}"));
-                    player.Send(new Packet.Outgoing(0x19));
+                        player.Send(0x18, $"{lobby.Name} {lobby.NumPlayers} {lobby.MaxCapacity} {lobby.Flags} {(lobby.HasSharedMem ? lobby.SharedMem : "#")} #{lobby.Game.Name}");
+                    player.Send(0x19);
                     break;
                 case 0x08: // Get Games
                     Game[] games = Server.GetGames();
                     foreach (Game game in games)
-                        player.Send(new Packet.Outgoing(0x1B, $"1 {game.Name}"));
-                    player.Send(new Packet.Outgoing(0x1C));
+                        player.Send(0x1B, $"1 {game.Name}");
+                    player.Send(0x1C);
                     break;
                 case 0x09: // Select Game
                     {
                         string gameName = split[0];
                         player.SetGame(Server.GetGame(gameName));
-                        player.Send(new Packet.Outgoing(0x1D, $"{player.Name} {player.CurrentGame.Name}"));
+                        player.Send(0x1D, $"{player.Name} {player.CurrentGame.Name}");
                     }
                     break;
                 case 0x0A: // Ping
-                    player.Send(new Packet.Outgoing(0x00));
+                    player.Send(0x00);
                     break;
                 case 0x0B: // Search Player
                     break;
                 case 0x0C: // Get License?
-                    player.Send(new Packet.Outgoing(0x22, "ABCDEFGHI"));
+                    player.Send(0x22, "ABCDEFGHI");
                     break;
                 case 0x0F: // Get Teams
                     if (player.CurrentLobby != null)
                     {
                         foreach (Team team in player.CurrentLobby.Teams)
-                            player.Send(new Packet.Outgoing(0x32, $"{team.Name} {team.NumPlayers} {team.MaxCapacity} {team.Flags} #{team.SharedMem} # {player.CurrentLobby.Game.Name}"));
-                        player.Send(new Packet.Outgoing(0x33));
+                            player.Send(0x32, $"{team.Name} {team.NumPlayers} {team.MaxCapacity} {team.Flags} #{team.SharedMem} # {player.CurrentLobby.Game.Name}");
+                        player.Send(0x33);
                     }
-                    player.Send(new Packet.Outgoing(0x33));
+                    player.Send(0x33);
                     break;
                 case 0x10: // Player List Refresh 
                     {
@@ -111,8 +109,8 @@ namespace IWANGOEmulator.LobbyServer
                         if (split[0].Length == 0)
                         {
                             foreach (Player p in player.CurrentLobby.Members)
-                                player.Send(p.GetSendDataPacket());
-                            player.Send(new Packet.Outgoing(0x31));
+                                player.Send(0x30, p.GetSendDataPacket());
+                            player.Send(0x31);
                         }
                         else // Get specific
                         {
@@ -120,8 +118,8 @@ namespace IWANGOEmulator.LobbyServer
                             Player p = Server.GetPlayer(name);
                             if (p != null)
                             {
-                                player.Send(p.GetSendDataPacket());
-                                player.Send(new Packet.Outgoing(0x31));
+                                player.Send(0x30, p.GetSendDataPacket());
+                                player.Send(0x31);
                             }
                         }
                     }
@@ -129,11 +127,11 @@ namespace IWANGOEmulator.LobbyServer
                 case 0x11: // Receive Lobby Chat
                     if (player.CurrentLobby != null)
                     {
-                        player.CurrentLobby.SendChat(player.Name, packet.DataString.Substring(packet.DataString.IndexOf(' ') + 1));
+                        player.CurrentLobby.SendChat(player.Name, payloadAsString.Substring(payloadAsString.IndexOf(' ') + 1));
                     }
                     break;
                 case 0x1B: // Player SharedMem        
-                    player.SetSharedMem(packet.Data);
+                    player.SetSharedMem(payload);
                     break;
                 case 0x20: // Team SharedMem
                     {
@@ -148,7 +146,7 @@ namespace IWANGOEmulator.LobbyServer
                     player.LeaveTeam();
                     break;
                 case 0x0D: // Reconnect Request
-                    player.Send(new Packet.Outgoing(0x1f));
+                    player.Send(0x1f);
                     break;
                 case 0x22: // Launch Request (Send Team IPs)
                 case 0x6A: // Launch Request Single
@@ -159,7 +157,7 @@ namespace IWANGOEmulator.LobbyServer
                     break;
                 case 0x23: // Team Chat
                     if (player.CurrentTeam != null)
-                        player.CurrentTeam.SendChat(player.Name, packet.DataString);
+                        player.CurrentTeam.SendChat(player.Name, payloadAsString);
                     break;
                 case 0x24: // Create Team
                     {
@@ -186,76 +184,11 @@ namespace IWANGOEmulator.LobbyServer
                 case 0x2a:
                 case 0x2b:
                 case 0x2c:
-                    Program.Log.Debug(BitConverter.ToString(packet.Data));
+                    Program.Log.Debug(BitConverter.ToString(payload));
                     break;
                 default:
                     break;
             }
         }
-
-        #region QueueRelated
-
-        public void StartProcessLoop()
-        {
-            if (!ProcessThread.IsAlive)
-                ProcessThread.Start();
-        }
-
-        public void StopProcessLoop()
-        {
-            ProcessThread.Abort();
-        }
-
-        public void Queue(Player conn, Packet.Incoming packet)
-        {
-            lock (ProcessQueue)
-            {
-                ProcessQueue.Enqueue(new Tuple<Player, Packet.Incoming>(conn, packet));
-            }
-        }
-
-        public void Clear()
-        {
-            lock (ProcessQueue)
-            {
-                ProcessQueue.Clear();
-            }
-        }
-
-        private void ProcessLoop()
-        {
-            Program.Log.Info($"Process loop has started");
-
-            while (ProcessThread.IsAlive)
-            {
-                bool isEmpty = false;
-                lock (ProcessQueue)
-                {
-                    if (ProcessQueue.Count == 0)
-                        isEmpty = true;
-                }
-
-                if (isEmpty)
-                {
-                    Thread.Yield();
-                    continue;
-                }
-
-                lock (ProcessQueue)
-                {
-                    while (ProcessQueue.Count > 0)
-                    {
-                        Tuple<Player, Packet.Incoming> next;
-                        ProcessQueue.TryDequeue(out next);
-                        if (next == null)
-                            break;
-
-                        HandlePacket(next.Item1, next.Item2);
-                    }
-                }
-            }
-        }
-
-        #endregion
     }
 }

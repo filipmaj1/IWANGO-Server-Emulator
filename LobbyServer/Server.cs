@@ -5,28 +5,41 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 
 namespace IWANGOEmulator.LobbyServer
 {
     class Server
     {
-        public const int PORT = 9501;
-        public const int BUFFER_SIZE = 0x200;
-        public const int BACKLOG = 100;
-
-        public const string GAMESERVER_IP = "192.168.0.249";
-        public const ushort GAMESERVER_PORT = 9502;
+        private const int BACKLOG = 100;
 
         private Socket ServerSocket;
+        private readonly string ServerIp;
+        private readonly ushort ServerPort;
+        private bool IsAlive = false;
+        private Thread ServerLoopThread;
+
+        private readonly Dictionary<Socket, Player> Clients = new Dictionary<Socket, Player>();
         private readonly PacketProcessor PacketProcessor;
 
         private readonly List<Game> GameList = new List<Game>();
-        private readonly List<Player> PlayerList = new List<Player>();
         private readonly List<Lobby> LobbyList = new List<Lobby>();
 
-        public Server()
+        public Server(string ip, ushort port)
         {
+            ServerIp = ip;
+            ServerPort = port;
             PacketProcessor = new PacketProcessor(this);
+        }
+
+        public string GetIp()
+        {
+            return ServerIp;
+        }
+
+        public ushort GetPort()
+        {
+            return ServerPort;
         }
 
         #region Lobby Server 
@@ -77,159 +90,146 @@ namespace IWANGOEmulator.LobbyServer
 
         public Player GetPlayer(string playerName)
         {
-            return PlayerList.SingleOrDefault(x => x.Name.Equals(playerName));
+            return Clients.Values.SingleOrDefault(x => x.Name.Equals(playerName));
         }
 
         #endregion
 
         #region Socket Handling
-        public bool StartServer()
+        public int StartServer()
         {
-            PacketProcessor.StartProcessLoop();
-
-            IPEndPoint serverEndPoint = new IPEndPoint(IPAddress.Parse("0.0.0.0"), PORT);
+            IPEndPoint serverEndPoint = new IPEndPoint(IPAddress.Parse(ServerIp), ServerPort);
             try
             {
                 ServerSocket = new Socket(serverEndPoint.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 ServerSocket.Bind(serverEndPoint);
                 ServerSocket.Listen(BACKLOG);
-                ServerSocket.BeginAccept(new AsyncCallback(AcceptCallback), ServerSocket);
-            }            
-            catch (Exception e)
-            {
-                Program.Log.Error("Could not create server socket: " + e.Message);
+
+                Program.Log.Info("Server socket created...");
             }
+            catch (Exception)
+            {
+                Program.Log.Error($"There was an issue binding port {ServerPort}.");
+                return -1;
+            }
+
+            IsAlive = true;
+
+            ServerSocket.BeginAccept(new AsyncCallback(AcceptCallback), ServerSocket);
+
+            ServerLoopThread = new Thread(MainLoop);
+            ServerLoopThread.Start();
 
             Program.Log.Info("Server has started @ {0}:{1}", (ServerSocket.LocalEndPoint as IPEndPoint).Address, (ServerSocket.LocalEndPoint as IPEndPoint).Port);
-
-            return true;
+            return 0;
         }
 
-        public void SendAll(byte[] data)
+        public void StopServer()
         {
-            foreach (Player conn in PlayerList)
-            {
-                conn.Send(data);
-            }
+            IsAlive = false;
         }
 
-        public void SendAll(ushort opcode, string data)
+        public void DebugSendToAll(byte[] data)
         {
-            foreach (Player conn in PlayerList)
+            foreach (Player client in Clients.Values)
             {
-                conn.Send(new Packet.Outgoing(opcode, data));
+                client.DebugSendPacket(data);
             }
         }
 
         private void AcceptCallback(IAsyncResult result)
         {
-            Player conn = null;
-            try
-            {
-                Socket s = (Socket)result.AsyncState;
-                conn = new Player
-                {
-                    socket = s.EndAccept(result),
-                    buffer = new byte[BUFFER_SIZE],
-                };
-                lock (PlayerList)
-                {
-                    PlayerList.Add(conn);
-                }
+            Socket serverSocket = (Socket)result.AsyncState;
+            Socket s = serverSocket.EndAccept(result);
+            Player client = new Player(this, s);
 
-                conn.socket.BeginReceive(conn.buffer, 0, conn.buffer.Length, SocketFlags.None, new AsyncCallback(ReceiveCallback), conn);
-            }
-            catch (SocketException)
+            if (!Clients.ContainsKey(s))
+                Clients.Add(s, client);
+            else
             {
-                if (conn.socket != null)
-                {
-                    conn.socket.Close();
-                    lock (PlayerList)
-                    {
-                        PlayerList.Remove(conn);
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                if (conn.socket != null)
-                {
-                    conn.socket.Close();
-                    lock (PlayerList)
-                    {
-                        PlayerList.Remove(conn);
-                    }
-                }
+                Clients.Remove(s);
+                Clients.Add(s, client);
             }
 
-            ServerSocket.BeginAccept(new AsyncCallback(AcceptCallback), ServerSocket);
+            serverSocket.BeginAccept(new AsyncCallback(AcceptCallback), serverSocket);
         }
 
-        private void ReceiveCallback(IAsyncResult result)
+        private void MainLoop()
         {
-            Player conn = (Player)result.AsyncState;
+            List<Socket> socketsToRemove = new List<Socket>();
 
-            try
+            while (IsAlive)
             {
-                int bytesRead = conn.socket.EndReceive(result);
-                conn.lastPartialSize += bytesRead;
+                var socketList = new List<Socket>(Clients.Keys);
 
-                if (bytesRead > 0)
+                if (socketList.Count == 0)
+                    continue;
+
+                Socket.Select(socketList, null, null, 1000);
+                foreach (Socket s in socketList)
                 {
-                    // Remove if disconnected
-                    if (!conn.socket.Connected)
+                    // Is this socket disconnected?
+                    if ((s.Poll(1000, SelectMode.SelectRead) && (s.Available == 0)) || !s.Connected)
                     {
-                        lock (PlayerList)
-                        {
-                            conn.Disconnect();
-                            PlayerList.Remove(conn);
-                            return;
-                        }
+                        socketsToRemove.Add(s);
+                        continue;
                     }
 
-                    // Something is going wrong, buffer full, gtfo.
-                    if (conn.lastPartialSize >= conn.buffer.Length)
-                    {
-                        conn.Disconnect();
-                        Program.Log.Info("{0} has disconnected due to full buffer.", conn.GetAddress());
+                    // Read socket
+                    try
+                    { 
+                        Player client = Clients[s];
+
+                        // Receive and process packets
+                        int bytesReceived = client.ReceiveData();
+                        while (true)
+                        {
+                            int bytesParsed = client.GetPacket(out ushort opcode, out byte[] payload);
+                            if (bytesParsed == 0)
+                                break;
+
+                            if (payload != null)
+                                PacketProcessor.HandlePacket(client, opcode, payload);
+                            else
+                            {
+                                Program.Log.Info($"{client} sent a bad packet and was kicked.");
+                                client.Disconnect();
+                                socketsToRemove.Add(s);
+                                break;
+                            }
+                        }
+                        client.FinishReceive();
                     }
-
-                    // Try to process as many packets as possible
-                    int bytesParsed = 0;
-                    using MemoryStream memStream = new MemoryStream(conn.buffer);
-                    using BinaryReader binReader = new BinaryReader(memStream);
-                    while (true)
+                    catch (SocketException)
                     {
-                        Packet.Incoming packet = Packet.Incoming.Read(binReader, conn.lastPartialSize, ref bytesParsed);
-                        if (packet != null)
-                        {
-                            PacketProcessor.Queue(conn, packet);
-                        }
-                        else
-                        {
-                            Array.Copy(conn.buffer, bytesParsed, conn.buffer, 0, conn.lastPartialSize - bytesParsed);
-                            conn.lastPartialSize -= bytesParsed;
-                            break;
-                        }
-                    }                  
-
-                    conn.socket.BeginReceive(conn.buffer, conn.lastPartialSize, conn.buffer.Length, SocketFlags.None, new AsyncCallback(ReceiveCallback), conn);
-                }
-            }
-            catch (SocketException)
-            {
-                if (conn.socket != null)
-                {
-                    Program.Log.Info("{0} has disconnected.", conn.GetAddress());
-
-                    lock (PlayerList)
-                    {
-                        PlayerList.Remove(conn);
+                        socketsToRemove.Add(s);
                     }
                 }
+
+                // Clean up all removed sockets
+                foreach (Socket s in socketsToRemove)
+                {
+                    if (!Clients.ContainsKey(s))
+                        continue;
+
+                    Player disconnectedClient = Clients[s];
+                    disconnectedClient.Disconnect();
+
+                    // Remove socket
+                    Clients.Remove(s);
+                }
+
+                socketsToRemove.Clear();
             }
+
+            foreach (Socket s in Clients.Keys)
+                Clients[s].Disconnect();
+
+            ServerSocket.Close(5);
+
+            Clients.Clear();
+            GC.Collect();
         }
-
         #endregion
     }
 }
