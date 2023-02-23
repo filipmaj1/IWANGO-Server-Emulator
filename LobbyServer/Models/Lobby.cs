@@ -69,8 +69,11 @@ namespace IWANGOEmulator.LobbyServer.Models
         public Team CreateTeam(Player creator, string teamName, ushort capacity, string type)
         {
             Team team = new Team(this, teamName, capacity, creator);
-            creator.Send(0x28, $"{team.Name} {creator.Name} {capacity} 0 {Game.Name}");
             Teams.Add(team);
+
+            foreach (Player p in Members)
+                p.Send(0x28, $"{team.Name} {creator.Name} {capacity} 0 {Game.Name}");
+
             return team;
         }
 

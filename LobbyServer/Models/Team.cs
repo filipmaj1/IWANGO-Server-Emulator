@@ -15,7 +15,7 @@ namespace IWANGOEmulator.LobbyServer.Models
 
         private Lobby Parent;
         public readonly List<Player> Members = new List<Player>();
-        public readonly Player Host;
+        public Player Host;
 
         public Team(Lobby parentLobby, string name, ushort capacity, Player host)
         {
@@ -24,6 +24,7 @@ namespace IWANGOEmulator.LobbyServer.Models
             MaxCapacity = capacity;
             Host = host;
             Members.Add(host);
+            host.CurrentTeam = this;
         }
 
         public void SetSharedMem(string memAsStr)
@@ -59,12 +60,16 @@ namespace IWANGOEmulator.LobbyServer.Models
             {
                 Members.Remove(player);
 
+                // Change host
+                if (Host.Equals(player) && Members.Count > 0)
+                    Host = Members[0];
+
                 // Send Packets
                 foreach (Player p in player.CurrentLobby.Members)
                     p.Send(0x3B, $"{Name} {player.Name}");
 
-                // Delete Team if 0 members
-                if (NumPlayers == 0)
+                // Team deleted?
+                if (Members.Count == 0)
                     Parent.DeleteTeam(this);
             }
         }
