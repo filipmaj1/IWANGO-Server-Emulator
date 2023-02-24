@@ -8,6 +8,7 @@ namespace IWANGOEmulator.LobbyServer
 {
     class Program
     {
+        public static string GAMESERVER_NAME = "Daytona_USA_Emu_#1";
         public static string GAMESERVER_IP = "0.0.0.0";
         public static ushort GAMESERVER_PORT = 9501;
 
@@ -20,7 +21,11 @@ namespace IWANGOEmulator.LobbyServer
 
             // Parse args
             for (int i = 0; i < args.Length; i++)
-            {
+            { 
+                if (args[i].Equals("-name") && args.Length - i >= 2)
+                {
+                    GAMESERVER_NAME = args[++i];                    
+                }
                 if (args[i].Equals("-ip") && args.Length - i >= 2)
                 {
                     GAMESERVER_IP = args[++i];
@@ -41,7 +46,7 @@ namespace IWANGOEmulator.LobbyServer
             }
 
             // Setup server. Daytona expects 5 lobbies preloaded
-            Server = new Server(GAMESERVER_IP, GAMESERVER_PORT);
+            Server = new Server(GAMESERVER_NAME, GAMESERVER_IP, GAMESERVER_PORT);
             Server.AddGame("Daytona");
             Server.CreateLobby("TestLobby", 100);
             Server.CreateLobby("Daytona_Lobby2", 100);
@@ -61,6 +66,7 @@ namespace IWANGOEmulator.LobbyServer
                     {
                         byte[] data = File.ReadAllBytes(".\\" + input.Substring(1));
                         Server.DebugSendToAll(data);
+                        Console.WriteLine("Sent!");
                     }
                     catch (IOException) { Console.WriteLine("> File not found"); }
                 }

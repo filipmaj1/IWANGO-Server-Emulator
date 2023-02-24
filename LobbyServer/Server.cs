@@ -14,6 +14,7 @@ namespace IWANGOEmulator.LobbyServer
         private const int BACKLOG = 100;
 
         private Socket ServerSocket;
+        private readonly string ServerName;
         private readonly string ServerIp;
         private readonly ushort ServerPort;
         private bool IsAlive = false;
@@ -25,11 +26,17 @@ namespace IWANGOEmulator.LobbyServer
         private readonly List<Game> GameList = new List<Game>();
         private readonly List<Lobby> LobbyList = new List<Lobby>();
 
-        public Server(string ip, ushort port)
+        public Server(string name, string ip, ushort port)
         {
+            ServerName = name;
             ServerIp = ip;
             ServerPort = port;
             PacketProcessor = new PacketProcessor(this);
+        }
+
+        public string GetName()
+        {
+            return ServerName;
         }
 
         public string GetIp()

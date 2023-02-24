@@ -9,30 +9,30 @@ namespace IWANGOEmulator.LobbyServer
     {
         private enum CLIOpcode : ushort
         {
-            LOGIN               = 0x01,
-            LOGIN2              = 0x02,
-            SEND_LOG            = 0x03,
-            ENTR_LOBBY          = 0x04,
-            DISCONNECT          = 0x05,
-            GET_LOBBIES         = 0x07,
-            GET_GAMES           = 0x08,
-            SELECT_GAME         = 0x09,
-            PING                = 0x0A,
-            SEARCH              = 0x0B,
-            GET_LICENSE         = 0x0C,
-            GET_TEAMS           = 0x0F,
-            REFRESH_PLAYERS     = 0x10,
-            CHAT_LOBBY          = 0x11,
-            SHAREDMEM_PLAYER    = 0x1B,
-            SHAREDMEM_TEAM      = 0x20,
-            LEAVE_TEAM          = 0x21,
-            RECONNECT           = 0x0D,
-            LAUNCH_REQUEST      = 0x22,
-            LAUNCH_GAME         = 0x65,
-            CHAT_TEAM           = 0x23,
-            CREATE_TEAM         = 0x24,
-            JOIN_TEAM           = 0x25,
-            LEAVE_LOBBY         = 0x3C
+            LOGIN = 0x01,
+            LOGIN2 = 0x02,
+            SEND_LOG = 0x03,
+            ENTR_LOBBY = 0x04,
+            DISCONNECT = 0x05,
+            GET_LOBBIES = 0x07,
+            GET_GAMES = 0x08,
+            SELECT_GAME = 0x09,
+            PING = 0x0A,
+            SEARCH = 0x0B,
+            GET_LICENSE = 0x0C,
+            GET_TEAMS = 0x0F,
+            REFRESH_PLAYERS = 0x10,
+            CHAT_LOBBY = 0x11,
+            SHAREDMEM_PLAYER = 0x1B,
+            SHAREDMEM_TEAM = 0x20,
+            LEAVE_TEAM = 0x21,
+            RECONNECT = 0x0D,
+            LAUNCH_REQUEST = 0x22,
+            LAUNCH_GAME = 0x65,
+            CHAT_TEAM = 0x23,
+            CREATE_TEAM = 0x24,
+            JOIN_TEAM = 0x25,
+            LEAVE_LOBBY = 0x3C
 
         }
 
@@ -66,11 +66,30 @@ namespace IWANGOEmulator.LobbyServer
             [CLIOpcode.LAUNCH_REQUEST] = LaunchRequestCommand,
             [CLIOpcode.LAUNCH_GAME] = LaunchGameCommand,
             [CLIOpcode.RECONNECT] = ReconnectCommand,
+            [CLIOpcode.SEARCH] = SearchCommand,
+            [CLIOpcode.SEND_LOG] = NullCommand,
         };
 
         public PacketProcessor(Server server)
         {
             Server = server;
+        }
+
+        public void HandlePacket(Player player, ushort opcode, byte[] payload)
+        {
+            string payloadAsString = Encoding.ASCII.GetString(payload);
+            string[] split = payloadAsString.Split(' ');
+
+            if (typeof(CLIOpcode).IsEnumDefined(opcode) && CommandHandlers.ContainsKey((CLIOpcode)opcode))
+            {
+#if DEBUG
+                if (!IgnoreDebug((CLIOpcode)opcode))
+                    Program.Log.Debug($"Received: 0x{opcode:X2} -> {payloadAsString}");
+#endif
+                CommandHandlers[(CLIOpcode)opcode](player, payload, payloadAsString);
+            }
+            else
+                Program.Log.Info($"Received unknown opcode: 0x{opcode:X2} -> {payloadAsString}");
         }
 
         private static void LoginCommand(Player player, byte[] data, string dataAsString)
@@ -166,12 +185,13 @@ namespace IWANGOEmulator.LobbyServer
             {
                 foreach (Team team in player.CurrentLobby.Teams)
                 {
+                    string sharedMem = team.SharedMem.Length != 0 ? $"*{team.SharedMem}" : "#";
                     string teamMembers = "";
 
                     foreach (Player player_ in team.Members)
                         teamMembers += $" {(team.Host.Equals(player_) ? "*" : "#")}{player_.Name}";
 
-                    player.Send(0x32, $"{team.Name} {team.NumPlayers} {team.MaxCapacity} {team.Flags} #{team.SharedMem} # {player.CurrentLobby.Game.Name}{teamMembers}");
+                    player.Send(0x32, $"{team.Name} {team.NumPlayers} {team.MaxCapacity} {team.Flags} {sharedMem}{teamMembers} {player.CurrentLobby.Game.Name}");
                 }
             }
             player.Send(0x33);
@@ -261,7 +281,7 @@ namespace IWANGOEmulator.LobbyServer
         {
             player.Send(0xE3);
             player.Send(0x16);
-            player.Disconnect();
+            player.Disconnect(false);
         }
 
 
@@ -280,27 +300,29 @@ namespace IWANGOEmulator.LobbyServer
             player.CurrentTeam.LaunchGame(player);
         }
 
-        public void HandlePacket(Player player, ushort opcode, byte[] payload)
+        private static void SearchCommand(Player player, byte[] data, string dataAsString)
         {
-            string payloadAsString = Encoding.ASCII.GetString(payload);
-            string[] split = payloadAsString.Split(' ');
+            Player found = Server.GetPlayer(dataAsString);
 
-            if (typeof(CLIOpcode).IsEnumDefined(opcode) && CommandHandlers.ContainsKey((CLIOpcode)opcode))
+            if (found != null)
             {
-#if DEBUG
-                if (!IgnoreDebug((CLIOpcode)opcode))
-                    Program.Log.Debug($"Received: 0x{opcode:X2} -> {payloadAsString}");
-#endif
-                CommandHandlers[(CLIOpcode)opcode](player, payload, payloadAsString);
+                string lobby = found.CurrentLobby != null ? $"!{found.CurrentLobby.Name}" : "#";
+                player.Send(0x07, $"{found.Name} !{Server.GetName()} {lobby}");
             }
-            else
-                Program.Log.Info($"Received unknown opcode: 0x{opcode:X2}");
+
+            player.Send(0xC9, "1");
+        }
+
+        private static void NullCommand(Player player, byte[] data, string dataAsString)
+        {
+
         }
 
         private static bool IgnoreDebug(CLIOpcode opcode)
         {
             switch (opcode)
             {
+                case CLIOpcode.SEND_LOG:
                 case CLIOpcode.PING:
                     return true;
                 default:

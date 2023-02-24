@@ -48,7 +48,7 @@ namespace IWANGOEmulator.LobbyServer.Models
 
         public int GetPort() => ((IPEndPoint)Socket.RemoteEndPoint).Port;
 
-        public void Disconnect()
+        public void Disconnect(bool sendDCPacket = true)
         {
             if (Disconnected)
                 return;
@@ -56,7 +56,8 @@ namespace IWANGOEmulator.LobbyServer.Models
             Disconnected = true;
 
             // Tell client to d/c if actually still connected
-            Send(0x17);
+            if (sendDCPacket)
+                Send(0x17);
 
             // Remove player from everything
             if (CurrentTeam != null)
