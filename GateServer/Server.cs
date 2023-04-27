@@ -187,9 +187,28 @@ namespace IWANGOEmulator.GateServer
                             return;
                         }
 
-                        string username = split[1];
+                        string daytonaHash = split[1];
 
-                        List<string> handles = Database.GetHandles(username);
+                        // Confirm this username exists
+                        string username;
+
+                        username = Database.IwangoGetVerification(daytonaHash);
+
+                        if (username == null)
+                        {
+                            username = Database.DreamPipeGetVerification(daytonaHash);
+                            if (username != null)
+                            {
+                                Database.AddUserIfMissing(username, daytonaHash);
+                            }
+                            else
+                            {
+                                SendError(conn, HandleError.ERROR1);
+                                return;
+                            }
+                        }
+
+                        List<string> handles = Database.GetHandles(daytonaHash);
                         StringBuilder builder = new StringBuilder();
                         for (int i = 0; i < handles.Count; i++)
                             builder.Append($"{i+1}{handles[i]} ");
@@ -204,7 +223,7 @@ namespace IWANGOEmulator.GateServer
                             return;
                         }
 
-                        string username = split[1];
+                        string daytonaHash = split[1];
                         if (!int.TryParse(split[3], out int handleIndx))
                         {
                             SendError(conn, HandleError.ERROR1);
@@ -212,7 +231,7 @@ namespace IWANGOEmulator.GateServer
                         }
                         string handlename = split[4];
 
-                        int result = Database.CreateHandle(username, handlename);
+                        int result = Database.CreateHandle(daytonaHash, handlename);
                         if (result == 1)
                             conn.Send(Packet.Create(0x3F3, $"1 {handlename}"));
                         else if (result == 0)
@@ -230,7 +249,7 @@ namespace IWANGOEmulator.GateServer
                             return;
                         }
 
-                        string username = split[1];
+                        string daytonaHash = split[1];
                         if (!int.TryParse(split[3], out int handleIndx))
                         {
                             SendError(conn, HandleError.ERROR1);
@@ -238,7 +257,7 @@ namespace IWANGOEmulator.GateServer
                         }
                         string newHandleName = split[4];
 
-                        int result = Database.ReplaceHandle(username, handleIndx, newHandleName);
+                        int result = Database.ReplaceHandle(daytonaHash, handleIndx, newHandleName);
                         if (result == 0)
                             conn.Send(Packet.Create(0x3F4, $"1 {split[4]}"));
                         else if (result == 0)
@@ -256,7 +275,7 @@ namespace IWANGOEmulator.GateServer
                             return;
                         }
 
-                        string username = split[1];
+                        string daytonaHash = split[1];
                         if (!int.TryParse(split[3], out int handleIndx))
                         {
                             SendError(conn, HandleError.ERROR1);
@@ -264,7 +283,7 @@ namespace IWANGOEmulator.GateServer
                         }
 
 
-                        if (Database.DeleteHandle(username, handleIndx))
+                        if (Database.DeleteHandle(daytonaHash, handleIndx))
                             conn.Send(Packet.Create(0x3F5));
                         else
                             SendError(conn, HandleError.ERROR1);                        
@@ -292,5 +311,6 @@ namespace IWANGOEmulator.GateServer
                     return;
             }
         }
+
     }
 }

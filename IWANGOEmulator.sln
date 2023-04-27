@@ -9,28 +9,37 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LobbyServer", "LobbyServer\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GameServer", "GameServer\GameServer.csproj", "{ABCF1612-B97C-47AB-9B6F-E2861C1B92D1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DaytonaKeyCutter", "DaytonaKeyCutter\DaytonaKeyCutter.csproj", "{A7B13BB1-5B5B-452D-93E1-148C14C5BD07}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DaytonaKeyCutter", "DaytonaKeyCutter\DaytonaKeyCutter.csproj", "{A7B13BB1-5B5B-452D-93E1-148C14C5BD07}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Release - WebApp|Any CPU = Release - WebApp|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{8779ADF9-3DFD-4E39-A015-5EBFCBD6CD2E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8779ADF9-3DFD-4E39-A015-5EBFCBD6CD2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8779ADF9-3DFD-4E39-A015-5EBFCBD6CD2E}.Release - WebApp|Any CPU.ActiveCfg = Release|Any CPU
+		{8779ADF9-3DFD-4E39-A015-5EBFCBD6CD2E}.Release - WebApp|Any CPU.Build.0 = Release|Any CPU
 		{8779ADF9-3DFD-4E39-A015-5EBFCBD6CD2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8779ADF9-3DFD-4E39-A015-5EBFCBD6CD2E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A64885CE-3CC1-4A1D-962A-C8C53E9FEACD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A64885CE-3CC1-4A1D-962A-C8C53E9FEACD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A64885CE-3CC1-4A1D-962A-C8C53E9FEACD}.Release - WebApp|Any CPU.ActiveCfg = Release|Any CPU
+		{A64885CE-3CC1-4A1D-962A-C8C53E9FEACD}.Release - WebApp|Any CPU.Build.0 = Release|Any CPU
 		{A64885CE-3CC1-4A1D-962A-C8C53E9FEACD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A64885CE-3CC1-4A1D-962A-C8C53E9FEACD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{ABCF1612-B97C-47AB-9B6F-E2861C1B92D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{ABCF1612-B97C-47AB-9B6F-E2861C1B92D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ABCF1612-B97C-47AB-9B6F-E2861C1B92D1}.Release - WebApp|Any CPU.ActiveCfg = Release|Any CPU
+		{ABCF1612-B97C-47AB-9B6F-E2861C1B92D1}.Release - WebApp|Any CPU.Build.0 = Release|Any CPU
 		{ABCF1612-B97C-47AB-9B6F-E2861C1B92D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ABCF1612-B97C-47AB-9B6F-E2861C1B92D1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A7B13BB1-5B5B-452D-93E1-148C14C5BD07}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A7B13BB1-5B5B-452D-93E1-148C14C5BD07}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7B13BB1-5B5B-452D-93E1-148C14C5BD07}.Debug|Any CPU.ActiveCfg = Release|Any CPU
+		{A7B13BB1-5B5B-452D-93E1-148C14C5BD07}.Debug|Any CPU.Build.0 = Release|Any CPU
+		{A7B13BB1-5B5B-452D-93E1-148C14C5BD07}.Release - WebApp|Any CPU.ActiveCfg = Release - WebApp|Any CPU
+		{A7B13BB1-5B5B-452D-93E1-148C14C5BD07}.Release - WebApp|Any CPU.Build.0 = Release - WebApp|Any CPU
 		{A7B13BB1-5B5B-452D-93E1-148C14C5BD07}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A7B13BB1-5B5B-452D-93E1-148C14C5BD07}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection

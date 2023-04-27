@@ -11,6 +11,106 @@ namespace IWANGOEmulator.GateServer
         const string USERNAME = "root";
         const string PASSWORD = "";
 
+        const string DP_HOST = "";
+        const string DP_PORT = "";
+        const string DP_DB_NAME = "";
+        const string DP_USERNAME = "";
+        const string DP_PASSWORD = "";
+
+        public static string IwangoGetVerification(string daytonaHash)
+        {
+            MySqlCommand cmd;
+
+            using MySqlConnection conn = new MySqlConnection($"Server={HOST}; Port={PORT}; Database={DB_NAME}; UID={USERNAME}; Password={PASSWORD}");
+            try
+            {
+                conn.Open();
+                string query = @"
+                    SELECT username FROM accounts WHERE daytonaHash = @daytonaHash;
+                ";
+                cmd = new MySqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@daytonaHash", daytonaHash);
+                using MySqlDataReader Reader = cmd.ExecuteReader();
+                while (Reader.Read())
+                {
+                    return Reader.GetString("username");
+                }
+            }
+            catch (MySqlException e)
+            {
+                Program.Log.Error(e.ToString());
+            }
+            finally
+            {
+                conn.Dispose();
+            }
+
+            return null;
+        }
+
+        public static string DreamPipeGetVerification(string daytonaHash)
+        {
+            MySqlCommand cmd;
+
+            using MySqlConnection conn = new MySqlConnection($"Server={DP_HOST}; Port={DP_PORT}; Database={DP_DB_NAME}; UID={DP_USERNAME}; Password={DP_PASSWORD}");
+            try
+            {
+                conn.Open();
+                string query = @"
+                    SELECT username FROM users WHERE daytonaHash = @daytonaHash;
+                ";
+                cmd = new MySqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@daytonaHash", daytonaHash);
+                using MySqlDataReader Reader = cmd.ExecuteReader();
+                while (Reader.Read())
+                {
+                    return Reader.GetString("username");
+                }
+            }
+            catch (MySqlException e)
+            {
+                Program.Log.Error(e.ToString());
+            }
+            finally
+            {
+                conn.Dispose();
+            }
+
+            return null;
+        }
+
+        public static bool AddUserIfMissing(string username, string daytonaHash)
+        {
+            username += "@daytonakey";
+
+            MySqlCommand cmd;
+            using MySqlConnection conn = new MySqlConnection($"Server={HOST}; Port={PORT}; Database={DB_NAME}; UID={USERNAME}; Password={PASSWORD}");
+            try
+            {
+                conn.Open();
+
+                string queryInsert = @"
+                    INSERT IGNORE INTO accounts SET username = @username, password = '', daytonaHash = @daytonaHash
+                    ";
+
+                cmd = new MySqlCommand(queryInsert, conn);
+                cmd.Parameters.AddWithValue("@username", username);
+                cmd.Parameters.AddWithValue("@daytonaHash", daytonaHash);
+
+                cmd.ExecuteNonQuery();
+            }
+            catch (MySqlException e)
+            {
+                return false;
+            }
+            finally
+            {
+                conn.Dispose();
+            }
+
+            return true;
+        }
+
         public static List<LobbyServer> GetLobbyServers(string commodityId)
         {
             MySqlCommand cmd;
@@ -58,7 +158,7 @@ namespace IWANGOEmulator.GateServer
                 string query = @"
                     SELECT handles.name FROM handles
                     INNER JOIN accounts ON accounts.id = handles.accountId
-                    WHERE username = @username
+                    WHERE daytonaHash = @username
                     ORDER BY handles.creationDate ASC";
                 cmd = new MySqlCommand(query, conn);
                 cmd.Parameters.AddWithValue("@username", username);
@@ -93,7 +193,7 @@ namespace IWANGOEmulator.GateServer
 
                 string queryInsert = @"
                     INSERT INTO handles (accountId, name)
-                    VALUES ((SELECT id FROM accounts WHERE username=@username), @name);
+                    VALUES ((SELECT id FROM accounts WHERE daytonaHash=@username), @name);
                     ";
 
                 cmd = new MySqlCommand(queryInsert, conn);
@@ -130,7 +230,7 @@ namespace IWANGOEmulator.GateServer
                 string getNameQuery = @"
                     SELECT name FROM handles 
                     INNER JOIN accounts on accounts.id = handles.accountId 
-                    WHERE username = @username 
+                    WHERE daytonaHash = @username 
                     ORDER BY creationDate DESC LIMIT @handleIndex, 1";
 
                 string oldHandleName;
@@ -184,7 +284,7 @@ namespace IWANGOEmulator.GateServer
                 string getNameQuery = @"
                     SELECT name FROM handles 
                     INNER JOIN accounts on accounts.id = handles.accountId 
-                    WHERE username = @username 
+                    WHERE daytonaHash = @username 
                     ORDER BY creationDate DESC LIMIT @handleIndex, 1";
 
 

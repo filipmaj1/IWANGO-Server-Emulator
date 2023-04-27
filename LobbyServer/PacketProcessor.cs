@@ -89,7 +89,7 @@ namespace IWANGOEmulator.LobbyServer
                 CommandHandlers[(CLIOpcode)opcode](player, payload, payloadAsString);
             }
             else
-                Program.Log.Info($"Received unknown opcode: 0x{opcode:X2} -> {payloadAsString}");
+                Program.Log.Info($"Received unknown opcode: 0x{opcode:X2} -> {payloadAsString} | {BitConverter.ToString(payload).Replace("-", "")}");
         }
 
         private static void LoginCommand(Player player, byte[] data, string dataAsString)
