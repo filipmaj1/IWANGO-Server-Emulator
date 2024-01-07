@@ -26,9 +26,14 @@ namespace IWANGOEmulator.LobbyServer
             SHAREDMEM_PLAYER = 0x1B,
             SHAREDMEM_TEAM = 0x20,
             LEAVE_TEAM = 0x21,
+            GET_EXTRAUSERMEM = 0x29,
+            REGIST_EXTRAUSERMEM_START = 0x2A,
+            REGIST_EXTRAUSERMEM_TRANSFER = 0x2B,
+            REGIST_EXTRAUSERMEM_END = 0x2C,
             RECONNECT = 0x0D,
             LAUNCH_REQUEST = 0x22,
             LAUNCH_GAME = 0x65,
+            REFRESH_USERS = 0x67,
             CHAT_TEAM = 0x23,
             CREATE_TEAM = 0x24,
             JOIN_TEAM = 0x25,
@@ -54,6 +59,10 @@ namespace IWANGOEmulator.LobbyServer
             [CLIOpcode.CREATE_TEAM] = CreateTeamCommand,
             [CLIOpcode.JOIN_TEAM] = JoinTeamCommand,
             [CLIOpcode.LEAVE_TEAM] = LeaveTeamCommand,
+            [CLIOpcode.GET_EXTRAUSERMEM] = GetExtraUserMem,
+            [CLIOpcode.REGIST_EXTRAUSERMEM_START] = RegisterExtraUserMem,
+            [CLIOpcode.REGIST_EXTRAUSERMEM_TRANSFER] = RegisterExtraUserMem,
+            [CLIOpcode.REGIST_EXTRAUSERMEM_END] = RegisterExtraUserMem,
             [CLIOpcode.GET_GAMES] = RefreshGamesCommand,
             [CLIOpcode.SELECT_GAME] = SelectGameCommand,
             [CLIOpcode.GET_LICENSE] = GetLicenseCommand,
@@ -65,6 +74,7 @@ namespace IWANGOEmulator.LobbyServer
             [CLIOpcode.DISCONNECT] = DisconnectCommand,
             [CLIOpcode.LAUNCH_REQUEST] = LaunchRequestCommand,
             [CLIOpcode.LAUNCH_GAME] = LaunchGameCommand,
+            [CLIOpcode.REFRESH_USERS] = RefreshUsersCommand,
             [CLIOpcode.RECONNECT] = ReconnectCommand,
             [CLIOpcode.SEARCH] = SearchCommand,
             [CLIOpcode.SEND_LOG] = NullCommand,
@@ -246,6 +256,38 @@ namespace IWANGOEmulator.LobbyServer
             player.Send(0x22, "ABCDEFGHI");
         }
 
+        private static void GetExtraUserMem(Player player, byte[] data, string dataAsString)
+        {
+            string[] split = dataAsString.Split(' ');
+
+            if (split.Length == 3)
+            {
+                string userName = split[0];
+                bool offsetGood = int.TryParse(split[1], out int offset);
+                bool lengthGood = int.TryParse(split[2], out int length);
+
+                if (!offsetGood || !lengthGood)
+                {
+                    player.Disconnect();
+                    return;
+                }
+
+                byte[] mem = new byte[]
+                {
+                    0x52, 0x45, 0x47, 0x41, 0x54, 0x45, 0x54, 0x52, 0x49, 0x53, 0x20, 0x31, 0x2E, 0x30, 0x30, 0x00, // SEGATETRIS 1.00
+                    0x0C, 0x02, 0x02, 0x00, 0x01, 0x00, 0x04, 0x00, 0x02, 0x00, 0x00, 0x00
+                };
+
+                player.SendExtraMem(mem, 0, 0x1C);
+            }
+            else
+                player.Disconnect();
+        }
+
+        private static void RegisterExtraUserMem(Player player, byte[] data, string dataAsString)
+        {
+            player.Send(0x4F);   
+        }
 
         private static void ChatLobbyCommand(Player player, byte[] data, string dataAsString)
         {
@@ -298,6 +340,66 @@ namespace IWANGOEmulator.LobbyServer
         private static void LaunchGameCommand(Player player, byte[] data, string dataAsString)
         {
             player.CurrentTeam.LaunchGame(player);
+        }
+
+        private static byte[] Test(int num)
+        {
+            byte[] sharedMem = new byte[0x1E];
+            sharedMem[0] = 0xFF;
+            sharedMem[4] = 0xFF;
+            sharedMem[8] = 0xFF;
+            sharedMem[12] = 0xFF;
+            sharedMem[16] = 0xFF;
+            sharedMem[20] = 0xFF;
+            byte[] data1 = Packet.CreateSharedMemPacket(sharedMem, $"0 *AAA{num} 0 0 0");
+            byte[] test = new byte[data1.Length + 4];
+            Array.Copy(data1, test, data1.Length);
+            test[test.Length - 4] = 0xFF;
+            return test;
+        }
+
+        private static void RefreshUsersCommand(Player player, byte[] data, string dataAsString)
+        {
+            if (dataAsString.Equals("2P_Red"))
+            {
+                player.Send(0xD9);
+                return;
+            }
+            if (dataAsString.Equals("2P_Blue"))
+            {
+                for (int i = 0; i < 1; i++)                
+                    player.Send(0xDA, Test(i));                
+                player.Send(0xD9);
+                return;
+            }
+            if (dataAsString.Equals("2P_Green"))
+            {
+                for (int i = 0; i < 2; i++)
+                    player.Send(0xDA, Test(i));
+                player.Send(0xD9);
+                return;
+            }
+            if (dataAsString.Equals("4P_Yellow"))
+            {
+                for (int i = 0; i < 3; i++)
+                    player.Send(0xDA, Test(i));
+                player.Send(0xD9);
+                return;
+            }
+            if (dataAsString.Equals("4P_Purple"))
+            {
+                for (int i = 0; i < 4; i++)
+                    player.Send(0xDA, Test(i));
+                player.Send(0xD9);
+                return;
+            }
+            if (dataAsString.Equals("4P_Orange"))
+            {
+                for (int i = 0; i < 5; i++)
+                    player.Send(0xDA, Test(i));
+                player.Send(0xD9);
+                return;
+            }
         }
 
         private static void SearchCommand(Player player, byte[] data, string dataAsString)

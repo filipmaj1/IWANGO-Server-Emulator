@@ -2,6 +2,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Numerics;
 
 namespace IWANGOEmulator.LobbyServer.Models
 {
@@ -190,6 +191,20 @@ namespace IWANGOEmulator.LobbyServer.Models
             {
                 // Some Error
             }
+        }
+
+        public void SendExtraMem(byte[] extraMem, int offset, int length)
+        {
+            if (extraMem.Length < offset + length)
+                return;
+
+            byte[] payload = new byte[length - offset + 2];
+            BitConverter.TryWriteBytes(payload, (ushort)length);
+            Array.Copy(extraMem, offset, payload, 2, length);
+
+            Send(0x50);
+            Send(0x51, payload);
+            Send(0x52);
         }
 
         #region Socket and Packet Handling

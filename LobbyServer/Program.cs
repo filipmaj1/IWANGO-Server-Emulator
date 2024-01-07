@@ -48,11 +48,12 @@ namespace IWANGOEmulator.LobbyServer
             // Setup server. Daytona expects 5 lobbies preloaded
             Server = new Server(GAMESERVER_NAME, GAMESERVER_IP, GAMESERVER_PORT);
             Server.AddGame("Daytona");
-            Server.CreateLobby("TestLobby", 100);
-            Server.CreateLobby("Daytona_Lobby2", 100);
-            Server.CreateLobby("Daytona_Lobby3", 100);
-            Server.CreateLobby("Daytona_Lobby4", 100);
-            Server.CreateLobby("Daytona_Lobby5", 100);
+            Server.CreateLobby("2P_Red", 100);
+            Server.CreateLobby("4P_Yellow", 100);
+            Server.CreateLobby("2P_Blue", 100);
+            Server.CreateLobby("2P_Green", 100);
+            Server.CreateLobby("4P_Purple", 100);
+            Server.CreateLobby("4P_Orange", 100);
 
             if (Server.StartServer() == -1)
                 return;
